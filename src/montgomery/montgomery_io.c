@@ -53,13 +53,13 @@ void encode_u_coord(mpz_t u, int n_bits, mpz_t prime, uchar *ub) {
     mpz_clear(temp);
 }
 
-void encode_u_coord_25519(mpz_t u, int n_bits, uchar *ub) {
+void encode_u_coord_25519(mpz_t u, uchar *ub) {
     mpz_t prime;
     mpz_init_set_ui(prime, 1);
     mpz_mul_2exp(prime, prime, 255);
     mpz_sub_ui(prime, prime, 19);
 
-    encode_u_coord(u, n_bits, prime, ub);
+    encode_u_coord(u, 255, prime, ub);
 
     mpz_clear(prime);
 }

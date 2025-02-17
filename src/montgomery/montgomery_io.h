@@ -25,7 +25,7 @@ void decode_u_coord(uchar ub[32], int n_bits, mpz_t u);
  * See section 5
  */
 void encode_u_coord(mpz_t u, int n_bits, mpz_t prime, uchar *ub);
-void encode_u_coord_25519(mpz_t u, int n_bits, uchar *ub);
+void encode_u_coord_25519(mpz_t u, uchar *ub);
 
 /**
  * See section 5
