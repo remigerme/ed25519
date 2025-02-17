@@ -167,5 +167,5 @@ void curve25519_ladder(mpz_t rop, mpz_t m, mpz_t p) {
 
     ladder(rop, m, p, a24, mod);
 
-    mpz_clears(a24, mod);
+    mpz_clears(a24, mod, NULL);
 }
