@@ -1,6 +1,7 @@
 #include "ed25519_utils.h"
 
 #include <stdio.h>
+#include <string.h>
 
 void random_bytes(uchar *buf, size_t size) {
     FILE *fd = fopen("/dev/urandom", "rb");
@@ -57,7 +58,7 @@ void load_file_buffer(char *prefix, char *ext, size_t size, char *buf) {
 
 char *read_data_file(char *datafile) {
     FILE *fd = fopen(datafile, "rb");
-    long fsize = get_file_size(fd);
+    size_t fsize = get_file_size(fd);
 
     char *data = (char *)malloc(fsize);
     if (data == NULL) {
