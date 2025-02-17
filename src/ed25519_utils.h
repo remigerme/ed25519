@@ -12,7 +12,7 @@ void save_buffer_file(char *buf, size_t size, char *prefix, char *ext);
 
 void load_file_buffer(char *prefix, char *ext, size_t size, char *buf);
 
-char *read_data_file(char *datafile);
+char *read_data_file(char *datafile, size_t *fsize);
 
 /**
  * Retrieve file size

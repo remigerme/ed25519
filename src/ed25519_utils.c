@@ -56,7 +56,7 @@ void load_file_buffer(char *prefix, char *ext, size_t size, char *buf) {
     fclose(fd);
 }
 
-char *read_data_file(char *datafile) {
+char *read_data_file(char *datafile, size_t *fsize) {
     FILE *fd = fopen(datafile, "rb");
     size_t fsize = get_file_size(fd);
 

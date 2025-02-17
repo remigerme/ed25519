@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "ed25519.h"
@@ -25,9 +26,10 @@ int main(int argc, char **argv) {
     load_file_buffer(sigfile, "", 64, (char *)sig);
 
     // Reading data
-    char *data = read_data_file(datafile);
+    size_t fsize;
+    char *data = read_data_file(datafile, &fsize);
 
-    if (ed25519_verify(pk, data, sig))
+    if (ed25519_verify(pk, data, fsize, sig))
         printf("ACCEPT\n");
     else
         printf("REJECT\n");

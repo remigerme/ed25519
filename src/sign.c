@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "ed25519.h"
@@ -24,11 +25,12 @@ int main(int argc, char **argv) {
     load_file_buffer(prefix, ".pk", 32, (char *)pk);
 
     // Fetching data
-    char *data = read_data_file(datafile);
+    size_t fsize;
+    char *data = read_data_file(datafile, &fsize);
 
     // Computing signature
     uchar sig[64];
-    ed25519_sign(sk, pk, data, sig);
+    ed25519_sign(sk, pk, data, fsize, sig);
 
     // Writing signature
     save_buffer_file((char *)sig, 64, sigfile, "");
