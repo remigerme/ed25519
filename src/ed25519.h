@@ -1,7 +1,7 @@
 #ifndef ED25519_H
 #define ED25519_H
 
-#include "utils.h"
+#include "ed25519_utils.h"
 
 void ed25519_keygen(uchar sk[32], uchar pk[32]);
 

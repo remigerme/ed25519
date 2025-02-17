@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "ed25519_utils.h"
 
 #include <stdio.h>
 

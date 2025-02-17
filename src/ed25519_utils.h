@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef ED25519_UTILS_H
+#define ED25519_UTILS_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,4 +22,4 @@ char *read_data_file(char *datafile);
  */
 long get_file_size(FILE *fd);
 
-#endif // UTILS_H
+#endif // ED25519_UTILS_H
