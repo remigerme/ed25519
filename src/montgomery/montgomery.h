@@ -1,6 +1,7 @@
 #ifndef MONTGOMERY_H
 #define MONTGOMERY_H
 
+#include "montgomery_io.h"
 #include <gmp.h>
 
 typedef struct point {
