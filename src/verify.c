@@ -19,10 +19,10 @@ int main(int argc, char **argv) {
 
     // Fetching key and signature
     uchar pk[32];
-    load_file_buffer(pkfile, "", 32, pk);
+    load_file_buffer(pkfile, "", 32, (char *)pk);
 
     uchar sig[64];
-    load_file_buffer(sigfile, "", 64, sig);
+    load_file_buffer(sigfile, "", 64, (char *)sig);
 
     // Reading data
     char *data = read_data_file(datafile);

@@ -20,8 +20,8 @@ int main(int argc, char **argv) {
     // Fetching keys
     uchar sk[32];
     uchar pk[32];
-    load_file_buffer(prefix, ".sk", 32, sk);
-    load_file_buffer(prefix, ".pk", 32, pk);
+    load_file_buffer(prefix, ".sk", 32, (char *)sk);
+    load_file_buffer(prefix, ".pk", 32, (char *)pk);
 
     // Fetching data
     char *data = read_data_file(datafile);
@@ -31,5 +31,5 @@ int main(int argc, char **argv) {
     ed25519_sign(sk, pk, data, sig);
 
     // Writing signature
-    save_buffer_file(sig, sigfile, "", 64);
+    save_buffer_file((char *)sig, 64, sigfile, "");
 }
