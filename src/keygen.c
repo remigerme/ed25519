@@ -19,6 +19,16 @@ int main(int argc, char **argv) {
     ed25519_keygen(sk, pk);
 
     // Saving keys to file
-    save_buffer_file(sk, 32, prefix, ".sk");
-    save_buffer_file(pk, 32, prefix, ".pk");
+    save_buffer_file((char *)sk, 32, prefix, ".sk");
+    save_buffer_file((char *)pk, 32, prefix, ".pk");
+
+#if ED25519_DEBUG
+    printf("Secret key : ");
+    for (int i = 0; i < 32; ++i)
+        printf("%02x", sk[i]);
+    printf("\nPublic key : ");
+    for (int i = 0; i < 32; ++i)
+        printf("%02x", pk[i]);
+    printf("\n");
+#endif
 }
