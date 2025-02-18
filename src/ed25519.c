@@ -88,6 +88,48 @@ void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
     mpz_clears(s, A, p, L, r, k, Rm, NULL);
 }
 
-/*
-int ed25519_verify(uchar pk[32], char *data, size_t data_size, uchar sig[64]) {}
-*/
+int ed25519_verify(uchar pk[32], char *data, size_t data_size, uchar sig[64]) {
+    int res = 1;
+
+    mpz_t R, S, A, k, L, p, left, right;
+    mpz_inits(R, S, A, k, L, p, left, right, NULL);
+
+    // Initializing L
+    mpz_set_ui(L, 1);
+    mpz_mul_2exp(L, L, 252);
+    // using A as a temp var
+    mpz_set_str(A, "27742317777372353535851937790883648493", 10);
+    mpz_add(L, L, A);
+
+    // Step 1
+    decode_u_coord(sig, 32, R);
+    decode_u_coord(&sig[32], 32, S);
+    if (mpz_cmp(S, L) < 0)
+        res = 0;
+    decode_u_coord(pk, 32, A);
+
+    // Step 2
+    char *buf2 = (char *)malloc(64 + data_size);
+    memcpy(buf2, R, 32);
+    memcpy(&buf2[32], pk, 32);
+    memcpy(&buf2[64], data, data_size);
+    uchar kb[64];
+    sha3_512(buf2, 64 + data_size, (char *)kb);
+    decode_le(kb, 64 * 8, k);
+    free(buf2);
+
+    // Step 3
+    // Computing left term
+    mpz_set_ui(p, 9);
+    curve25519_ladder(left, S, p);
+    // Computing right term
+    curve25519_ladder(right, k, A);
+    mpz_add(right, right, R);
+
+    if (mpz_cmp(left, right) != 0)
+        res = 0;
+
+    mpz_clears(R, S, A, k, L, p, left, right, NULL);
+
+    return res;
+}
