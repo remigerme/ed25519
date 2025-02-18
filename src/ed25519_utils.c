@@ -20,6 +20,7 @@ void save_buffer_file(char *buf, size_t size, char *prefix, char *ext) {
     size_t sp = strlen(prefix);
     size_t se = strlen(ext);
     char filename[sp + se + 1];
+    filename[0] = 0; // empty string !
 
     strncat(filename, prefix, sp);
     strncat(filename, ext, se);
@@ -40,6 +41,7 @@ void load_file_buffer(char *prefix, char *ext, size_t size, char *buf) {
     size_t sp = strlen(prefix);
     size_t se = strlen(ext);
     char filename[sp + se + 1];
+    filename[0] = 0; // empty string !
 
     strncat(filename, prefix, sp);
     strncat(filename, ext, se);
@@ -58,15 +60,15 @@ void load_file_buffer(char *prefix, char *ext, size_t size, char *buf) {
 
 char *read_data_file(char *datafile, size_t *fsize) {
     FILE *fd = fopen(datafile, "rb");
-    size_t fsize = get_file_size(fd);
+    *fsize = get_file_size(fd);
 
-    char *data = (char *)malloc(fsize);
+    char *data = (char *)malloc(*fsize);
     if (data == NULL) {
-        fprintf(stderr, "Couldn't allocate %lu bytes\n", fsize);
+        fprintf(stderr, "Couldn't allocate %lu bytes\n", *fsize);
         exit(EXIT_FAILURE);
     }
-    if (fread(data, 1, fsize, fd) < fsize) {
-        fprintf(stderr, "Couldn't read %lu bytes from %s\n", fsize, datafile);
+    if (fread(data, 1, *fsize, fd) < *fsize) {
+        fprintf(stderr, "Couldn't read %lu bytes from %s\n", *fsize, datafile);
         exit(EXIT_FAILURE);
     }
     fclose(fd);
@@ -79,4 +81,17 @@ long get_file_size(FILE *fd) {
     long size = ftell(fd);
     fseek(fd, 0, SEEK_SET);
     return size;
+}
+
+void mpz_to_chars(mpz_t n, size_t n_bits, char *nb) {
+    // Copy to avoid modifying input
+    mpz_t temp;
+    mpz_init_set(temp, n);
+
+    for (size_t i = 0; i < n_bits; ++i) {
+        nb[i] = (char)(mpz_get_ui(temp) & 0xFF);
+        mpz_fdiv_q_2exp(temp, temp, 8);
+    }
+
+    mpz_clear(temp);
 }

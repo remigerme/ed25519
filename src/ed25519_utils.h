@@ -1,6 +1,7 @@
 #ifndef ED25519_UTILS_H
 #define ED25519_UTILS_H
 
+#include <gmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -21,5 +22,7 @@ char *read_data_file(char *datafile, size_t *fsize);
  * @return File size in bytes
  */
 long get_file_size(FILE *fd);
+
+void mpz_to_chars(mpz_t n, size_t n_bits, char *nb);
 
 #endif // ED25519_UTILS_H

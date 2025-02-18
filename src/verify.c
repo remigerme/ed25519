@@ -7,9 +7,9 @@
 int main(int argc, char **argv) {
     // Checking arguments
     if (argc < 4) {
-        perror("[Usage] ./keygen pkfile datafile sigfile\n"
+        perror("[Usage] ./verify pkfile datafile sigfile\n"
                "Where :\n"
-               "\pkfile : public key file\n"
+               "\tpkfile : public key file\n"
                "\tdatafile : file containing data\n"
                "\tsigfile : file containing signature\n");
         return 1;
