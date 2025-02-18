@@ -53,6 +53,12 @@ void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
 
     // Step 3
     uchar R[32];
+    // Initializing L
+    mpz_set_ui(L, 1);
+    mpz_mul_2exp(L, L, 252);
+    // using Rm as a temp var
+    mpz_set_str(Rm, "27742317777372353535851937790883648493", 10);
+    mpz_add(L, L, Rm);
     mpz_mod(r, r, L);
     curve25519_ladder(Rm, r, p);
     encode_u_coord_25519(Rm, R);
