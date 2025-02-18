@@ -22,8 +22,8 @@ void save_buffer_file(char *buf, size_t size, char *prefix, char *ext) {
     char filename[sp + se + 1];
     filename[0] = 0; // empty string !
 
-    strncat(filename, prefix, sp);
-    strncat(filename, ext, se);
+    strcat(filename, prefix);
+    strcat(filename, ext);
 
     FILE *fd = fopen(filename, "wb");
     if (fd == NULL) {
@@ -43,8 +43,8 @@ void load_file_buffer(char *prefix, char *ext, size_t size, char *buf) {
     char filename[sp + se + 1];
     filename[0] = 0; // empty string !
 
-    strncat(filename, prefix, sp);
-    strncat(filename, ext, se);
+    strcat(filename, prefix);
+    strcat(filename, ext);
 
     FILE *fd = fopen(filename, "rb");
     if (fd == NULL) {
