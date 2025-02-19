@@ -3,3 +3,4 @@ sign
 verify
 .vscode
 *.dSYM
+test-public
