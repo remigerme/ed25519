@@ -9,10 +9,10 @@ void handle_test(char *name) {
     char path[1024] = "tests/test-";
     strcat(path, name);
 
-    load_file_buffer(path, "/key.sk.bin", 32, (char *)sk);
-    load_file_buffer(path, "/key.pk.bin", 32, (char *)expected_pk);
+    load_file_buffer(path, "/key.bin.sk", 32, (char *)sk);
+    load_file_buffer(path, "/key.bin.pk", 32, (char *)expected_pk);
 
-    generate_public_key(sk, pk, NULL);
+    generate_public_key(sk, pk, NULL, NULL);
 
     for (int i = 0; i < 32; ++i)
         assert(pk[i] == expected_pk[i]);

@@ -37,7 +37,8 @@ void set_initial_ed_point(mpz_t prime, mpz_t P[4]) {
     mpz_mod(P[3], P[3], prime);
 }
 
-void generate_public_key(uchar sk[32], uchar pk[32], uchar *h_snd_half) {
+void generate_public_key(uchar sk[32], uchar pk[32], uchar *h_snd_half,
+                         mpz_t *a) {
     uchar h[64];
     mpz_t s, temp, prime, A[4], B[4];
     mpz_inits(s, temp, prime, NULL);
@@ -62,6 +63,9 @@ void generate_public_key(uchar sk[32], uchar pk[32], uchar *h_snd_half) {
     mpz_add_ui(temp, temp, 8);
     mpz_ior(s, s, temp);
 
+    if (a)
+        mpz_set(*a, s);
+
     // Step 3
     ed_point_mul(s, B, prime, A);
 
@@ -78,7 +82,7 @@ void ed25519_keygen(uchar sk[32], uchar pk[32]) {
     random_bytes(sk, 32);
 
     // Deriving public key from private key
-    generate_public_key(sk, pk, NULL);
+    generate_public_key(sk, pk, NULL, NULL);
 }
 
 void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
@@ -96,8 +100,7 @@ void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
     // Step 1
     uchar pk[32];
     uchar prefix[32];
-    generate_public_key(sk, pk, prefix);
-    chars_to_mpz(pk, 32, s);
+    generate_public_key(sk, pk, prefix, &s);
 
     // Step 2
     uchar *buf2 = (uchar *)malloc(32 + data_size);
@@ -105,12 +108,13 @@ void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
     memcpy(&buf2[32], data, data_size);
     uchar rb[64];
     SHA512(buf2, 32 + data_size, rb);
-    chars_to_mpz(rb, 32, r);
+    chars_to_mpz(rb, 64, r);
     free(buf2);
 
     // Step 3
     uchar R[32];
     mpz_mod(r, r, L);
+
     ed_point_mul(r, B, prime, Rp);
     ed_point_compress(Rp, prime, R);
 
@@ -121,7 +125,7 @@ void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
     memcpy(&buf4[64], data, data_size);
     uchar kb[64];
     SHA512(buf4, 64 + data_size, kb);
-    chars_to_mpz(kb, 32, k);
+    chars_to_mpz(kb, 64, k);
     free(buf4);
 
     // Step 5
