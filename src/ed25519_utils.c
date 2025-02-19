@@ -138,7 +138,6 @@ void ed_point_add(mpz_t P[4], mpz_t Q[4], mpz_t prime, mpz_t out[4]) {
     mpz_mod(C, C, prime);
     mpz_mul_ui(D, P[2], 2);
     mpz_mul(D, D, Q[2]);
-    mpz_mul(D, D, d);
     mpz_mod(D, D, prime);
 
     mpz_sub(E, B, A);
