@@ -1,9 +1,9 @@
 #include "ed25519.h"
 
 #include "ed25519_utils.h"
-#include "sha3.h"
 
 #include <gmp.h>
+#include <openssl/sha.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,18 +47,13 @@ void generate_public_key(uchar sk[32], uchar pk[32], uchar *h_snd_half) {
     set_initial_ed_point(prime, B);
 
     // Step 1
-    sha3_512((char *)sk, 32, (char *)h);
-
-    for (int i = 0; i < 64; ++i)
-        printf("%02x", h[i]);
-    printf("\n");
+    SHA512(sk, 32, h);
 
     if (h_snd_half)
         memcpy(h_snd_half, &h[32], 32);
 
     // Step 2
     chars_to_mpz(h, 32, s);
-    gmp_printf("%Zx\n", s);
     mpz_set_ui(temp, 1);
     mpz_mul_2exp(temp, temp, 254);
     mpz_sub_ui(temp, temp, 8);
@@ -105,11 +100,11 @@ void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
     chars_to_mpz(pk, 32, s);
 
     // Step 2
-    char *buf2 = (char *)malloc(32 + data_size);
+    uchar *buf2 = (uchar *)malloc(32 + data_size);
     memcpy(buf2, prefix, 32);
     memcpy(&buf2[32], data, data_size);
     uchar rb[64];
-    sha3_512(buf2, 32 + data_size, (char *)rb);
+    SHA512(buf2, 32 + data_size, rb);
     chars_to_mpz(rb, 32, r);
     free(buf2);
 
@@ -120,12 +115,12 @@ void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
     ed_point_compress(Rp, prime, R);
 
     // Step 4
-    char *buf4 = (char *)malloc(64 + data_size);
+    uchar *buf4 = (uchar *)malloc(64 + data_size);
     memcpy(buf4, R, 32);
     memcpy(&buf4[32], pk, 32);
     memcpy(&buf4[64], data, data_size);
     uchar kb[64];
-    sha3_512(buf4, 64 + data_size, (char *)kb);
+    SHA512(buf4, 64 + data_size, kb);
     chars_to_mpz(kb, 32, k);
     free(buf4);
 
