@@ -22,4 +22,4 @@ test-public: src/ed25519_utils.c src/ed25519.c tests/public.c
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^
 
 clean:
-	rm -f keygen sign verify
+	rm -f keygen sign verify test-public
