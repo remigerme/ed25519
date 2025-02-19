@@ -30,8 +30,13 @@ void ed_point_init(mpz_t P[4]);
 void ed_point_clear(mpz_t P[4]);
 void ed_point_set(mpz_t P[4], mpz_t out[4]);
 
+int ed_point_eq(mpz_t P[4], mpz_t Q[4], mpz_t prime);
+
+void ed_point_add(mpz_t P[4], mpz_t Q[4], mpz_t prime, mpz_t out[4]);
 void ed_point_mul(mpz_t n, mpz_t P[4], mpz_t prime, mpz_t out[4]);
 
 void ed_point_compress(mpz_t P[4], mpz_t prime, uchar buf[32]);
+int ed_point_decompress(uchar buf[32], mpz_t prime, mpz_t P[4]);
+int ed_point_recover_x(mpz_t y, mpz_t sign, mpz_t prime, mpz_t x);
 
 #endif // ED25519_UTILS_H

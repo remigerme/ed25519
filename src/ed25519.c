@@ -147,45 +147,56 @@ void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
     mpz_clears(s, A, L, r, k, NULL);
 }
 
-/*
 int ed25519_verify(uchar pk[32], char *data, size_t data_size, uchar sig[64]) {
     int res = 1;
 
-    mpz_t R, S, A, k, L, p, left, right;
-    mpz_inits(R, S, A, k, L, p, left, right, NULL);
+    mpz_t R[4], S, A[4], B[4], k, L, prime, left[4], right[4];
+    mpz_inits(S, k, L, prime, NULL);
 
+    ed_point_init(R);
+    ed_point_init(A);
+    ed_point_init(B);
+    ed_point_init(left);
+    ed_point_init(right);
+
+    set_prime(prime);
     set_group_order(L);
+    set_initial_ed_point(prime, B);
 
     // Step 1
-    decode_u_coord(sig, 255, R);
-    decode_u_coord(&sig[32], 255, S);
-    if (mpz_cmp(S, L) < 0)
+    res &= ed_point_decompress(sig, prime, R);
+    chars_to_mpz(&sig[32], 32, S);
+    if (mpz_cmp(S, L) >= 0)
         res = 0;
-    decode_u_coord(pk, 255, A);
+    res &= ed_point_decompress(pk, prime, A);
 
     // Step 2
-    char *buf2 = (char *)malloc(64 + data_size);
-    memcpy(buf2, R, 32);
+    uchar *buf2 = (uchar *)malloc(64 + data_size);
+    memcpy(buf2, sig, 32);
     memcpy(&buf2[32], pk, 32);
     memcpy(&buf2[64], data, data_size);
     uchar kb[64];
-    sha3_512(buf2, 64 + data_size, (char *)kb);
-    decode_le(kb, 64 * 8, k);
+    SHA512(buf2, 64 + data_size, kb);
+    chars_to_mpz(kb, 64, k);
+    mpz_mod(k, k, L);
     free(buf2);
 
     // Step 3
     // Computing left term
-    mpz_set_ui(p, 9);
-    curve25519_ladder(left, S, p);
+    ed_point_mul(S, B, prime, left);
     // Computing right term
-    curve25519_ladder(right, k, A);
-    mpz_add(right, right, R);
+    ed_point_mul(k, A, prime, right);
+    ed_point_add(R, right, prime, right);
 
-    if (mpz_cmp(left, right) != 0)
-        res = 0;
+    res &= ed_point_eq(left, right, prime);
 
-    mpz_clears(R, S, A, k, L, p, left, right, NULL);
+    mpz_clears(S, k, L, prime, NULL);
+
+    ed_point_clear(R);
+    ed_point_clear(A);
+    ed_point_clear(B);
+    ed_point_clear(left);
+    ed_point_clear(right);
 
     return res;
 }
-*/

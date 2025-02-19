@@ -115,6 +115,29 @@ void ed_point_set(mpz_t P[4], mpz_t out[4]) {
     mpz_set(out[3], P[3]);
 }
 
+int ed_point_eq(mpz_t P[4], mpz_t Q[4], mpz_t prime) {
+    int res = 1;
+    mpz_t a, b;
+    mpz_inits(a, b, NULL);
+
+    mpz_mul(a, P[0], Q[2]);
+    mpz_mul(b, Q[0], P[2]);
+    mpz_sub(a, a, b);
+    mpz_mod(a, a, prime);
+    if (mpz_cmp_ui(a, 0) != 0)
+        res = 0;
+
+    mpz_mul(a, P[1], Q[2]);
+    mpz_mul(b, Q[1], P[2]);
+    mpz_sub(a, a, b);
+    mpz_mod(a, a, prime);
+    if (mpz_cmp_ui(a, 0) != 0)
+        res = 0;
+
+    mpz_clears(a, b, NULL);
+    return res;
+}
+
 void ed_point_add(mpz_t P[4], mpz_t Q[4], mpz_t prime, mpz_t out[4]) {
     mpz_t A, B, C, D, E, F, G, H, d;
     mpz_inits(A, B, C, D, E, F, G, H, d, NULL);
@@ -195,4 +218,95 @@ void ed_point_compress(mpz_t P[4], mpz_t prime, uchar buf[32]) {
     mpz_to_chars(y, 32, buf);
 
     mpz_clears(zinv, x, y, NULL);
+}
+
+int ed_point_decompress(uchar buf[32], mpz_t prime, mpz_t P[4]) {
+    mpz_t x, y, sign, temp;
+    mpz_inits(x, y, sign, temp, NULL);
+
+    chars_to_mpz(buf, 32, y);
+    mpz_div_2exp(sign, y, 255);
+
+    mpz_set_ui(temp, 1);
+    mpz_mul_2exp(temp, temp, 255);
+    mpz_sub_ui(temp, temp, 1);
+    mpz_and(y, y, temp);
+
+    if (!ed_point_recover_x(y, sign, prime, x)) {
+        mpz_clears(x, y, sign, temp, NULL);
+        return 0;
+    }
+
+    mpz_set(P[0], x);
+    mpz_set(P[1], y);
+    mpz_set_ui(P[2], 1);
+    mpz_mul(P[3], x, y);
+    mpz_mod(P[3], P[3], prime);
+
+    mpz_clears(x, y, sign, temp, NULL);
+
+    return 1;
+}
+
+int ed_point_recover_x(mpz_t y, mpz_t sign, mpz_t prime, mpz_t x) {
+    if (mpz_cmp(y, prime) >= 0)
+        return 0;
+
+    mpz_t x2, temp;
+    mpz_inits(x2, temp, NULL);
+    mpz_mul(x2, y, y);
+    mpz_sub_ui(x2, x2, 1);
+    mpz_set_str(temp,
+                "37095705934669439343138083508754565189542113879843219016388785"
+                "533085940283555",
+                10);
+    mpz_mul(temp, temp, y);
+    mpz_mul(temp, temp, y);
+    mpz_add_ui(temp, temp, 1);
+    mpz_invert(temp, temp, prime);
+    mpz_mul(x2, x2, temp);
+
+    if (mpz_cmp_ui(x2, 0) == 0) {
+        if (mpz_cmp_ui(sign, 0) != 0) {
+            mpz_clears(x2, temp, NULL);
+            return 0;
+        }
+        mpz_set_ui(x, 0);
+        mpz_clears(x2, temp, NULL);
+        return 1;
+    }
+
+    mpz_t sqrt_m1;
+    mpz_init(sqrt_m1);
+
+    mpz_set_str(sqrt_m1,
+                "19681161376707505956807079304988542015446066515923890162744021"
+                "073123829784752",
+                10);
+
+    mpz_add_ui(temp, prime, 3);
+    mpz_div_ui(temp, temp, 8);
+    mpz_powm(x, x2, temp, prime);
+
+    mpz_mul(temp, x, x);
+    mpz_sub(temp, temp, x2);
+    mpz_mod(temp, temp, prime);
+    if (mpz_cmp_ui(temp, 0) != 0) {
+        mpz_mul(x, x, sqrt_m1);
+        mpz_mod(x, x, prime);
+    }
+
+    mpz_mul(temp, x, x);
+    mpz_sub(temp, temp, x2);
+    mpz_mod(temp, temp, prime);
+    if (mpz_cmp_ui(temp, 0) != 0) {
+        mpz_clears(x2, temp, sqrt_m1, NULL);
+        return 0;
+    }
+
+    if (mpz_cmp_ui(sign, mpz_tstbit(x, 0)) != 0)
+        mpz_sub(x, prime, x);
+
+    mpz_clears(x2, temp, sqrt_m1, NULL);
+    return 1;
 }
