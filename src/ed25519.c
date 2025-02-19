@@ -1,67 +1,123 @@
 #include "ed25519.h"
 
 #include "ed25519_utils.h"
-#include "montgomery.h"
 #include "sha3.h"
 
 #include <gmp.h>
 #include <stdlib.h>
 #include <string.h>
 
+void set_prime(mpz_t p) {
+    mpz_set_ui(p, 1);
+    mpz_mul_2exp(p, p, 255);
+    mpz_sub_ui(p, p, 19);
+}
+
+void set_group_order(mpz_t L) {
+    mpz_t temp;
+    mpz_init(temp);
+    mpz_set_ui(L, 1);
+    mpz_mul_2exp(L, L, 252);
+    mpz_set_str(temp, "27742317777372353535851937790883648493", 10);
+    mpz_add(L, L, temp);
+    mpz_clear(temp);
+}
+
+void set_initial_ed_point(mpz_t prime, mpz_t P[4]) {
+    mpz_set_str(P[0],
+                "15112221349535400772501151409588531511454012693041857206046113"
+                "283949847762202",
+                10);
+    mpz_set_str(P[1],
+                "46316835694926478169428394003475163141307993866256225615783033"
+                "603165251855960",
+                10);
+    mpz_set_ui(P[2], 1);
+    mpz_mul(P[3], P[0], P[1]);
+    mpz_mod(P[3], P[3], prime);
+}
+
+void generate_public_key(uchar sk[32], uchar pk[32], uchar *h_snd_half) {
+    uchar h[64];
+    mpz_t s, temp, prime, A[4], B[4];
+    mpz_inits(s, temp, prime, NULL);
+    ed_point_init(A);
+    ed_point_init(B);
+    set_prime(prime);
+    set_initial_ed_point(prime, B);
+
+    // Step 1
+    sha3_512((char *)sk, 32, (char *)h);
+
+    for (int i = 0; i < 64; ++i)
+        printf("%02x", h[i]);
+    printf("\n");
+
+    if (h_snd_half)
+        memcpy(h_snd_half, &h[32], 32);
+
+    // Step 2
+    chars_to_mpz(h, 32, s);
+    gmp_printf("%Zx\n", s);
+    mpz_set_ui(temp, 1);
+    mpz_mul_2exp(temp, temp, 254);
+    mpz_sub_ui(temp, temp, 8);
+    mpz_and(s, s, temp);
+
+    mpz_add_ui(temp, temp, 8);
+    mpz_ior(s, s, temp);
+
+    // Step 3
+    ed_point_mul(s, B, prime, A);
+
+    // Step 4
+    ed_point_compress(A, prime, pk);
+
+    mpz_clears(s, temp, prime, NULL);
+    ed_point_clear(A);
+    ed_point_clear(B);
+}
+
 void ed25519_keygen(uchar sk[32], uchar pk[32]) {
     // Generating private key - 32 random bytes
     random_bytes(sk, 32);
 
     // Deriving public key from private key
-    uchar h[64];
-    mpz_t s, A, p;
-    mpz_inits(s, A, p, NULL);
-
-    sha3_512((char *)sk, 32, (char *)h);
-
-    decode_scalar_25519(h, s);
-
-    mpz_set_ui(p, 9);
-    curve25519_ladder(A, s, p);
-
-    encode_u_coord_25519(A, pk);
-
-    mpz_clears(s, A, p, NULL);
+    generate_public_key(sk, pk, NULL);
 }
 
 void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
-    mpz_t s, A, p, L, r, k, Rm;
-    mpz_inits(s, A, p, L, r, k, Rm, NULL);
+    mpz_t s, prime, L, r, k, A[4], B[4], Rp[4];
+    mpz_inits(s, prime, L, r, k, NULL);
+
+    ed_point_init(A);
+    ed_point_init(B);
+    ed_point_init(Rp);
+
+    set_prime(prime);
+    set_initial_ed_point(prime, B);
+    set_group_order(L);
 
     // Step 1
     uchar pk[32];
-    uchar h[64];
-    sha3_512((char *)sk, 32, (char *)h);
-    decode_scalar_25519(h, s);
-    mpz_set_ui(p, 9);
-    curve25519_ladder(A, s, p);
-    encode_u_coord_25519(A, pk);
+    uchar prefix[32];
+    generate_public_key(sk, pk, prefix);
+    chars_to_mpz(pk, 32, s);
 
     // Step 2
     char *buf2 = (char *)malloc(32 + data_size);
-    memcpy(buf2, &h[32], 32);
+    memcpy(buf2, prefix, 32);
     memcpy(&buf2[32], data, data_size);
     uchar rb[64];
     sha3_512(buf2, 32 + data_size, (char *)rb);
-    decode_le(rb, 64 * 8, r);
+    chars_to_mpz(rb, 32, r);
     free(buf2);
 
     // Step 3
     uchar R[32];
-    // Initializing L
-    mpz_set_ui(L, 1);
-    mpz_mul_2exp(L, L, 252);
-    // using Rm as a temp var
-    mpz_set_str(Rm, "27742317777372353535851937790883648493", 10);
-    mpz_add(L, L, Rm);
     mpz_mod(r, r, L);
-    curve25519_ladder(Rm, r, p);
-    encode_u_coord_25519(Rm, R);
+    ed_point_mul(r, B, prime, Rp);
+    ed_point_compress(Rp, prime, R);
 
     // Step 4
     char *buf4 = (char *)malloc(64 + data_size);
@@ -70,7 +126,7 @@ void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
     memcpy(&buf4[64], data, data_size);
     uchar kb[64];
     sha3_512(buf4, 64 + data_size, (char *)kb);
-    decode_le(kb, 64 * 8, k);
+    chars_to_mpz(kb, 32, k);
     free(buf4);
 
     // Step 5
@@ -81,32 +137,32 @@ void ed25519_sign(uchar sk[32], char *data, size_t data_size, uchar sig[64]) {
 
     // Step 6
     memcpy(sig, R, 32);
-    char S[32];
+    uchar S[32];
     mpz_to_chars(k, 32, S);
     memcpy(&sig[32], S, 32);
 
-    mpz_clears(s, A, p, L, r, k, Rm, NULL);
+    ed_point_clear(A);
+    ed_point_clear(B);
+    ed_point_clear(Rp);
+
+    mpz_clears(s, A, L, r, k, NULL);
 }
 
+/*
 int ed25519_verify(uchar pk[32], char *data, size_t data_size, uchar sig[64]) {
     int res = 1;
 
     mpz_t R, S, A, k, L, p, left, right;
     mpz_inits(R, S, A, k, L, p, left, right, NULL);
 
-    // Initializing L
-    mpz_set_ui(L, 1);
-    mpz_mul_2exp(L, L, 252);
-    // using A as a temp var
-    mpz_set_str(A, "27742317777372353535851937790883648493", 10);
-    mpz_add(L, L, A);
+    set_group_order(L);
 
     // Step 1
-    decode_u_coord(sig, 32, R);
-    decode_u_coord(&sig[32], 32, S);
+    decode_u_coord(sig, 255, R);
+    decode_u_coord(&sig[32], 255, S);
     if (mpz_cmp(S, L) < 0)
         res = 0;
-    decode_u_coord(pk, 32, A);
+    decode_u_coord(pk, 255, A);
 
     // Step 2
     char *buf2 = (char *)malloc(64 + data_size);
@@ -133,3 +189,4 @@ int ed25519_verify(uchar pk[32], char *data, size_t data_size, uchar sig[64]) {
 
     return res;
 }
+*/
