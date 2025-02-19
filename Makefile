@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -O2 -DED25519_DEBUG # -g -fsanitize=address
+CFLAGS = -Wall -Wextra -Werror -O2 -DED25519_DEBUG -g -fsanitize=address
 INCLUDES = -lm -lgmp -Isrc -Isrc/sha3 -Isrc/montgomery
 
 all: keygen sign verify
@@ -15,6 +15,11 @@ sign: $(SHA3) src/ed25519_utils.c src/ed25519.c src/sign.c
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^
 
 verify: $(SHA3) src/ed25519_utils.c src/ed25519.c src/verify.c
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^
+
+tests: test-public
+
+test-public: $(SHA3) src/ed25519_utils.c src/ed25519.c tests/public.c
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^
 
 clean:
